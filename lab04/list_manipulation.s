@@ -47,8 +47,13 @@ main:
 update_list:
     # TODO: which registers do we need to save? (complete this after you have finished the other todos because
     # we don't know which registers we need to save until we implement the function)
+    addi sp, sp, -12    # Push the stack pointer down by 3 words (12 bytes)
+    sw ra, 0(sp)        # Save the return address register (ra)
+    sw s0, 4(sp)        # Save the saved register (s0)
+    sw s1, 8(sp)        # Save the saved register (s1)
 
     # TODO: implement if (!curr_node) { return; }
+    beq a0, x0, done    # Compare the curr_node against nullptr
 
     add s0, a0, x0      # save address of the current node in s0
     add s1, a1, x0      # save address of function in s1
@@ -64,26 +69,41 @@ update_list:
     # we call. This is to enforce the abstraction barrier of calling convention.
 update_list_loop:
     # TODO: load the address of the array of current node into t1
+    lw t1, 0(s0)
 
     # TODO: load the size of the node's array into t2
+    lw t2, 4(s0)
 
     # TODO: load the value of the current number that we want to square into a0
     # Remember that t1 = address of array and t0 = index we are modifying
+    slli t3, t0, 2
+    add t1, t1, t3
+    lw a0, 0(t1)
 
     # TODO: which registers do we need to save before calling square?
     # (do this after implementing the rest of update_list_loop)
+    addi sp, sp, -12            # Push the stack pointer down by 3 words (12 bytes)
+    sw t0, 0(sp)                # Save the temporary register (t0)
+    sw t1, 4(sp)                # Save the temporary register (t1)
+    sw t2, 8(sp)                # Save the temporary register (t2)
 
     jalr s1             # call the function on that value.
 
     # TODO: restore the registers we saved before calling square
     # (do this after implementing the rest of update_list_loop)
+    lw t0, 0(sp)                # Retrieve the temporary register (t0)
+    lw t1, 4(sp)                # Retrieve the temporary register (t1)
+    lw t2, 8(sp)                # Retrieve the temporary register (t2)
+    addi sp, sp, 12             # Return the stack pointer up by 3 words (12 bytes)
 
     # TODO: store the value returned by square back into the array
+    sw a0, 0(t1)
 
     addi t0, t0, 1               # increment the count
     bne t0, t2, update_list_loop # repeat if we haven't reached the array size yet
 
     #TODO: load the address of the next node into a0
+    lw a0, 8(s0)
     
     mv a1, s1       # put the address of the function back into a1 to prepare for the recursion
 
@@ -92,6 +112,10 @@ done:
     # EPILOUGE
     # TODO: restore the registers that we saved at the beginning of update_list
 
+    lw ra, 0(sp)                # Retrieve the original return address (ra)
+    lw s0, 4(sp)                # Retrieve the original saved register (s0)
+    lw s1, 8(sp)                # Retrieve the original saved register (s1)
+    addi sp, sp, 12             # Return the stack pointer up by 3 words (12 bytes)
     jr ra
 
 print_newline:
